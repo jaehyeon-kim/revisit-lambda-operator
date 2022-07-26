@@ -1,0 +1,6 @@
+-r s3-logs-extension-demo-zip-archive/functionsrc/requirements.txt
+pytest
+black
+ipdb
+boto3
+apache-airflow==2.3.3
