@@ -1,71 +1,82 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Lambda Extensions S3 Logs Demo
-##########################################################################
-#  Parameters & Globals                                                  #
-##########################################################################
+Description: Lambda functions used to demonstrate Lambda invoke operator with S3 log extension
+
 Globals:
   Function:
+    MemorySize: 128
+    Timeout: 30
     Tracing: Active
     Tags:
-      Application: S3LogsExtensionDemo
+      Application: LambdaInvokeOperatorDemo
+
 Resources:
-##########################################################################
-#  Lambda functions                                                      #
-##########################################################################
-  Function:
+  FunctionWithoutLogExtension:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: logs-extension-demo-function
-      Description: Logs Extension Demo Function
+      FunctionName: function-without-log-extension
+      Description: Lambda function without S3 log extension
       CodeUri: functionsrc/
       Runtime: python3.8
       Handler: lambda_function.lambda_handler
-      MemorySize: 128
-      Timeout: 100
-      Environment:
-        Variables:
-          S3_BUCKET_NAME:
-            Ref: LogExtensionsBucket
       Layers:
-        - !Ref S3LogExtensionsLayer
-      Policies:
-        - S3WritePolicy:
-            BucketName: !Ref LogExtensionsBucket
-##########################################################################
-#  Lambda layers                                                         #
-##########################################################################
-  S3LogExtensionsLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      Description: Layer containing extension(s)
-      ContentUri: extensionssrc/
-      CompatibleRuntimes:
-        - python3.8
-      LicenseInfo: 'Available under the MIT-0 license.'
-      RetentionPolicy: Delete
-    Metadata:
-      BuildMethod: makefile
-##########################################################################
-#  S3 Resources                                                   #
-##########################################################################
-  LogExtensionsBucket:
-    Type: 'AWS::S3::Bucket'
-    Properties:
-      LifecycleConfiguration:
-        Rules:
-          - Id: DeleteAfterSevenDays
-            Status: "Enabled"
-            ExpirationInDays: 7
-##########################################################################
-#  OUTPUTS                                                               #
-##########################################################################
+        - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:26
+  # FunctionWithLogExtension:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: function-with-log-extension
+  #     Description: Lambda function with S3 log extension
+  #     CodeUri: functionsrc/
+  #     Runtime: python3.8
+  #     Handler: lambda_function.lambda_handler
+  #     Environment:
+  #       Variables:
+  #         S3_BUCKET_NAME:
+  #           Ref: LogExtensionsBucket
+  #     Layers:
+  #       - !Ref S3LogExtensionsLayer
+  #       - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:26
+  #     Policies:
+  #       - S3WritePolicy:
+  #           BucketName: !Ref LogExtensionsBucket
+  #       - Version: '2012-10-17'
+  #         Statement:
+  #           - Sid: SSMDescribeParametersPolicy
+  #             Effect: Deny
+  #             Action:
+  #               - logs:CreateLogGroup
+  #               - logs:CreateLogStream
+  #               - logs:PutLogEvents
+  #             Resource: 'arn:aws:logs:*:*:*'
+  # S3LogExtensionsLayer:
+  #   Type: AWS::Serverless::LayerVersion
+  #   Properties:
+  #     Description: Layer containing extension(s)
+  #     ContentUri: extensionssrc/
+  #     CompatibleRuntimes:
+  #       - python3.8
+  #     LicenseInfo: 'Available under the MIT-0 license.'
+  #     RetentionPolicy: Delete
+  #   Metadata:
+  #     BuildMethod: makefile
+  # LogExtensionsBucket:
+  #   Type: 'AWS::S3::Bucket'
+  #   Properties:
+  #     LifecycleConfiguration:
+  #       Rules:
+  #         - Id: DeleteAfterSevenDays
+  #           Status: "Enabled"
+  #           ExpirationInDays: 7
+
 Outputs:
-  ExtensionsLayer:
-    Value: !Ref S3LogExtensionsLayer
-    Description: Log Extension Layer ARN
-  Function:
-    Value: !Ref Function
-    Description: Lambda Function
-  LogExtensionsBucketName:
-    Value: !Ref LogExtensionsBucket
+  FunctionWithoutLogExtension:
+    Value: !Ref FunctionWithoutLogExtension
+    Description: Lambda function without S3 log extension ARN
+  # FunctionWithLogExtension:
+  #   Value: !Ref FunctionWithLogExtension
+  #   Description: Lambda function with S3 log extension ARN
+  # S3LogExtensionsLayer:
+  #   Value: !Ref S3LogExtensionsLayer
+  #   Description: Log Extension Layer ARN
+  # LogExtensionsBucketName:
+  #   Value: !Ref LogExtensionsBucket

@@ -3,4 +3,5 @@ pytest
 black
 ipdb
 boto3
+aws-lambda-powertools
 apache-airflow==2.3.3

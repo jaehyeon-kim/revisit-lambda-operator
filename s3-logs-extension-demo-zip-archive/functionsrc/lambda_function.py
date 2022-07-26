@@ -1,12 +1,22 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: MIT-0
+import time
+from aws_lambda_powertools import Logger
+from aws_lambda_powertools.utilities.typing import LambdaContext
 
-import json
-import os
+logger = Logger()
 
-def lambda_handler(event, context):
-    print(f"Function: Logging something which logging extension will send to S3")
-    return {
-        'statusCode': 200,
-        'body': json.dumps('Hello from Lambda!')
-    }
+
+def lambda_handler(event: dict, context: LambdaContext):
+    correlation_id = event["correlation_id"]
+    num_iter = event.get("n", 10)
+    to_fail = event.get("to_fail", False)
+    logger.set_correlation_id(correlation_id)
+    logger.info(f"num_iter - {num_iter}, fail - {to_fail}")
+    try:
+        for n in range(num_iter):
+            logger.info(f"iter - {n + 1}...")
+            if to_fail and (n + 1) == num_iter:
+                raise Exception
+            time.sleep(1)
+    except Exception as e:
+        logger.exception("Function invocation failed...")
+        raise RuntimeError("Unable to finish loop") from e
