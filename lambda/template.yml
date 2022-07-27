@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Lambda functions used to demonstrate Lambda invoke operator with S3 log extension
+
+Globals:
+  Function:
+    MemorySize: 128
+    Timeout: 100
+    Runtime: python3.8
+    Tracing: Active
+    Environment:
+      Variables:
+        POWERTOOLS_SERVICE_NAME: airflow
+        LOG_LEVEL: INFO
+    Tags:
+      Application: LambdaInvokeOperatorDemo
+
+Resources:
+  ExampleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: example-lambda-function
+      Description: Example lambda function
+      CodeUri: src/
+      Handler: lambda_function.lambda_handler
+      Layers:
+        - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:26
+
+Outputs:
+  FunctionWithoutLogExtension:
+    Value: !Ref ExampleFunction
+    Description: Example lambda function ARN

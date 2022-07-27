@@ -5,6 +5,7 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 logger = Logger()
 
 
+@logger.inject_lambda_context
 def lambda_handler(event: dict, context: LambdaContext):
     correlation_id = event["correlation_id"]
     num_iter = event.get("n", 10)
