@@ -5,7 +5,7 @@ Description: Lambda functions used to demonstrate Lambda invoke operator with S3
 Globals:
   Function:
     MemorySize: 128
-    Timeout: 100
+    Timeout: 30
     Runtime: python3.8
     Tracing: Active
     Environment:
@@ -31,8 +31,13 @@ Resources:
       FunctionName: !Ref ExampleFunction
       MaximumRetryAttempts: 0
       Qualifier: "$LATEST"
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ExampleFunction}"
+      RetentionInDays: 1
 
 Outputs:
-  FunctionWithoutLogExtension:
+  ExampleFunction:
     Value: !Ref ExampleFunction
     Description: Example lambda function ARN
