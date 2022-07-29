@@ -5,7 +5,7 @@
 # remove docker-compose services
 docker-compose down --volumes
 # create folders to mount
-rm -rf ./dags ./logs ./plugins .env
+rm -rf ./logs
 mkdir -p ./dags ./logs ./plugins
 # setting the right airflow user
 echo -e "AIRFLOW_UID=$(id -u)" > .env

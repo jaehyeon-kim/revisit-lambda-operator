@@ -1,7 +1,8 @@
--r s3-logs-extension-demo-zip-archive/functionsrc/requirements.txt
+-r lambda/src/requirements.txt
 pytest
 black
 ipdb
 boto3
 aws-lambda-powertools
 apache-airflow==2.3.3
+apache-airflow-providers-amazon
