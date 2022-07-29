@@ -2,7 +2,6 @@ import os
 import json
 from datetime import datetime, timedelta
 from uuid import uuid4
-from xmlrpc.client import boolean
 from airflow import DAG
 from airflow.providers.amazon.aws.operators.aws_lambda import AwsLambdaInvokeFunctionOperator
 
@@ -11,7 +10,7 @@ LAMBDA_FUNCTION_NAME = os.getenv("LAMBDA_FUNCTION_NAME", "example-lambda-functio
 
 
 def _set_payload(n: int = 10, to_fail: bool = True, correlation_id: str = str(uuid4())):
-    return json.dumps({"n": n, "to_fail": to_fail, "correlation_id": str(uuid4())})
+    return json.dumps({"n": n, "to_fail": to_fail, "correlation_id": correlation_id})
 
 
 with DAG(
