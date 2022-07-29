@@ -32,7 +32,9 @@ class CustomLambdaFunctionOperator(AwsLambdaInvokeFunctionOperator):
             qualifier=qualifier,
             invocation_type=invocation_type,
             client_context=client_context,
-            payload=payload,
+            payload=json.dumps(
+                {**json.loads((payload or "{}")), **{"correlation_id": correlation_id}}
+            ),
             aws_conn_id=aws_conn_id,
             **kwargs,
         )
