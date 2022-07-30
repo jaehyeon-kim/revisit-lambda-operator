@@ -1,13 +1,11 @@
 import time
 import json
 import functools
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Optional
 from uuid import uuid4
 
 import boto3
-from airflow.providers.amazon.aws.hooks.lambda_function import LambdaHook
 from airflow.providers.amazon.aws.operators.aws_lambda import AwsLambdaInvokeFunctionOperator
-from numpy import double
 
 if TYPE_CHECKING:
     from airflow.utils.context import Context
@@ -51,7 +49,7 @@ class CustomLambdaFunctionOperator(AwsLambdaInvokeFunctionOperator):
 
         return wrapper_decorator
 
-    @_log_processor()
+    @_log_processor
     def execute(self, context: "Context"):
         return super().execute(context)
 
@@ -61,32 +59,22 @@ class CustomLambdaFunctionOperator(AwsLambdaInvokeFunctionOperator):
         return resp["Timeout"]
 
     def _process_log_events(self, function_timeout: int):
-        status, start_time = None, 0
-        for _ in range(function_timeout):
-            status, start_time = self._parse_log_events(start_time)
-            if status == "succeeded":
-                break
-            time.sleep(1)
-        if status != "succeeded":
-            raise RuntimeError("Lambda function end message not found after function timeout")
-
-    def _parse_log_events(self, start_time: int):
         paginator = boto3.client("logs").get_paginator("filter_log_events")
-        status = None
-        response_iterator = paginator.paginate(
-            logGroupName=f"/aws/lambda/{self.function_name}",
-            filterPattern=f'"correlation_id" "{self.correlation_id}"',
-            startTime=start_time + 1,
-            # PaginationConfig={"MaxItems": 3},
-        )
-        for page in response_iterator:
-            for event in page["events"]:
-                timestamp = event["timestamp"]
-                message = json.loads(event["message"])
-                print(message)
-                if message["level"] == "ERROR":
-                    raise RuntimeError("ERROR found in log")
-                if message["message"] == "Function ended":
-                    status = "succeeded"
-                    break
-        return status, timestamp
+        start_time = 0
+        for _ in range(function_timeout):
+            response_iterator = paginator.paginate(
+                logGroupName=f"/aws/lambda/{self.function_name}",
+                filterPattern=f'"correlation_id" "{self.correlation_id}"',
+                startTime=start_time + 1,
+            )
+            for page in response_iterator:
+                for event in page["events"]:
+                    start_time = event["timestamp"]
+                    message = json.loads(event["message"])
+                    print(message)
+                    if message["level"] == "ERROR":
+                        raise RuntimeError("ERROR found in log")
+                    if message["message"] == "Function ended":
+                        return
+            time.sleep(1)
+        raise RuntimeError("Lambda function end message not found after function timeout")
