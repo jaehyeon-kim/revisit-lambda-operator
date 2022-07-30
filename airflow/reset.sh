@@ -6,7 +6,7 @@
 docker-compose down --volumes
 # create folders to mount
 rm -rf ./logs
-mkdir -p ./dags ./logs ./plugins
+mkdir -p ./dags ./logs ./plugins ./tests
 # setting the right airflow user
 echo -e "AIRFLOW_UID=$(id -u)" > .env
 # initialise database
