@@ -39,33 +39,29 @@ class CustomLambdaFunctionOperator(AwsLambdaInvokeFunctionOperator):
         )
         self.correlation_id = correlation_id
 
-    def _log_processor(func):
+    def log_processor(func):
         @functools.wraps(func)
         def wrapper_decorator(self, *args, **kwargs):
             payload = func(self, *args, **kwargs)
-            function_timeout = self._get_function_timeout()
-            self._process_log_events(function_timeout)
+            function_timeout = self.get_function_timeout()
+            self.process_log_events(function_timeout)
             return payload
 
         return wrapper_decorator
 
-    @_log_processor
+    @log_processor
     def execute(self, context: "Context"):
         return super().execute(context)
 
-    def _get_function_timeout(self):
-        lambda_client = boto3.client("lambda")
-        resp = lambda_client.get_function_configuration(FunctionName=self.function_name)
+    def get_function_timeout(self):
+        resp = boto3.client("lambda").get_function_configuration(FunctionName=self.function_name)
         return resp["Timeout"]
 
-    def _process_log_events(self, function_timeout: int):
-        paginator = boto3.client("logs").get_paginator("filter_log_events")
+    def process_log_events(self, function_timeout: int):
         start_time = 0
         for _ in range(function_timeout):
-            response_iterator = paginator.paginate(
-                logGroupName=f"/aws/lambda/{self.function_name}",
-                filterPattern=f'"correlation_id" "{self.correlation_id}"',
-                startTime=start_time + 1,
+            response_iterator = self.get_response_iterator(
+                self.function_name, self.correlation_id, start_time
             )
             for page in response_iterator:
                 for event in page["events"]:
@@ -78,3 +74,12 @@ class CustomLambdaFunctionOperator(AwsLambdaInvokeFunctionOperator):
                         return
             time.sleep(1)
         raise RuntimeError("Lambda function end message not found after function timeout")
+
+    @staticmethod
+    def get_response_iterator(function_name: str, correlation_id: str, start_time: int):
+        paginator = boto3.client("logs").get_paginator("filter_log_events")
+        return paginator.paginate(
+            logGroupName=f"/aws/lambda/{function_name}",
+            filterPattern=f'"{correlation_id}"',
+            startTime=start_time + 1,
+        )
